@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>政府亂花錢計算機</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: linear-gradient(135deg, #F8FFFB 0%, #E6F5EB 100%);
+            margin: 0;
+            padding: 20px;
+            color: #1C2F25;
+        }
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 166, 80, 0.15);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(90deg, #00A650, #4EE38A);
+            color: white;
+            text-align: center;
+            padding: 28px 20px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        .content { padding: 24px; }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+        }
+        .row {
+            margin-bottom: 16px;
+        }
+        .row label {
+            display: block;
+            margin-bottom: 8px;
+            color: #444;
+            font-size: 17px;
+            font-weight: 500;
+        }
+        #input, #unit {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 22px;           /* 縮小 */
+            padding: 14px 18px;
+            border: 3px solid #00A650;
+            border-radius: 16px;
+            background: #FAFFFC;
+        }
+        #unit {
+            font-size: 20px;
+        }
+        .result {
+            font-size: 36px;           /* 縮小 */
+            font-weight: 700;
+            color: #00A650;
+            margin: 8px 0 6px 0;
+            word-break: break-all;     /* 長數字自動換行 */
+        }
+        .comment {
+            font-size: 15.5px;         /* 縮小 */
+            line-height: 1.6;
+            color: #2C3E35;
+        }
+        .clear-row {
+            margin-top: 8px;
+        }
+        .clear-btn {
+            width: 100%;
+            padding: 14px;
+            background: #FF5252;
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        button {
+            width: 100%;
+            background: #00A650;
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            border-radius: 16px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        button:hover { background: #008C44; }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">政府亂花錢計算機</div>
+        <div class="content">
+            
+            <div class="card">
+                <label style="display:block; margin-bottom:12px; color:#444; font-size:17px; font-weight:500;">
+                    你的稅金在這裡蒸發
+                </label>
+
+                <div class="row">
+                    <label>請輸入金額</label>
+                    <input type="text" id="input" value="0" oninput="calculate()">
+                </div>
+
+                <div class="row">
+                    <label>請選擇單位</label>
+                    <select id="unit" onchange="calculate()">
+                        <option value="1000">千</option>
+                        <option value="10000" selected>萬</option>
+                        <option value="100000000">億</option>
+                        <option value="1000000000000">兆</option>
+                    </select>
+                </div>
+
+                <div class="clear-row">
+                    <button class="clear-btn" onclick="clearInput()">🔄 歸零</button>
+                </div>
+            </div>
+
+            <!-- 每人金額 -->
+            <div class="card">
+                <div style="font-size:18px; margin-bottom:8px;">💰 能發給全民每人</div>
+                <div id="perPerson" class="result">0.00 元</div>
+                <div id="comment" class="comment"></div>
+            </div>
+
+            <!-- 珍珠奶茶 -->
+            <div class="card">
+                <div style="font-size:18px; margin-bottom:8px;">🧋 換算 珍珠奶茶你可以喝</div>
+                <div id="pearlTea" class="result">0 杯</div>
+            </div>
+
+            <button onclick="shareScreenshot()">📸 分享截圖給朋友</button>
+        </div>
+        <div class="footer">即時計算 • 全國數據 • 2026</div>
+    </div>
+
+    <script>
+        function formatNumber(num) {
+            return num.toLocaleString('zh-TW');
+        }
+
+        function formatWithDecimal(num) {
+            return num.toLocaleString('zh-TW', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function getRawNumber(str) {
+            return parseFloat(str.replace(/,/g, '')) || 0;
+        }
+
+        function getWasteComment(perPerson) {
+            if (perPerson < 1) return "沒辦法做任何事情，跟你沒關係。政府這波操作，你連看都看不到。";
+            if (perPerson < 100) return "你少了一杯手搖飲（80~100元）或是一份點心囉～ 政府幫你「健康管理」？";
+            if (perPerson < 500) return "你好多天的餐費沒了… 這筆錢夠吃4~5天便當，現在只能繼續吃泡麵度日。";
+            if (perPerson < 1000) return "夠付全國一個月水電瓦斯的一小部分，或是半個月交通費… 這點錢連基本開銷都補不起，感謝政府「貼心」小確幸。";
+            if (perPerson < 5000) return "一個月吃飯錢的一小部分不見了… 近7成勞工月薪中位數才3.8萬多，這筆錢直接讓你吃土好幾週。";
+            if (perPerson < 10000) return "可以繳全國平均半個月到一個月房租（租金中位數約8500元）… 繼續當租奴，存錢夢想再等等。";
+            if (perPerson < 50000) return "超過很多人的月薪或好幾個月房租！這已經是全國單身一兩個月的基本生活費，直接腰斬你的財務。";
+            return "這已經是一整個月到好幾個月的平均薪水，或是一年基本生活費（全國每人約21.3萬元/年）… 可以考慮買小車頭期款、付房貸，或是認真考慮移民了。政府亂花錢的藝術，真的令人「佩服」到想哭！";
+        }
+
+        function calculate() {
+            let raw = getRawNumber(document.getElementById('input').value);
+            let unit = parseFloat(document.getElementById('unit').value);
+            let amount = raw * unit;
+
+            let perPerson = amount / 23000000;
+            let pearlCups = amount / 70;
+
+            document.getElementById('perPerson').textContent = formatWithDecimal(perPerson) + " 元";
+            document.getElementById('pearlTea').textContent = formatNumber(pearlCups) + " 杯";
+            document.getElementById('comment').textContent = getWasteComment(perPerson);
+        }
+
+        function clearInput() {
+            document.getElementById('input').value = "0";
+            calculate();
+        }
+
+        async function shareScreenshot() {
+            try {
+                const script = document.createElement('script');
+                script.src = "https://html2canvas.hertzen.com/dist/html2canvas.min.js";
+                document.head.appendChild(script);
+                script.onload = async () => {
+                    const canvas = await html2canvas(document.querySelector('.container'));
+                    const link = document.createElement('a');
+                    link.download = '政府亂花錢計算機.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                };
+            } catch(e) {
+                alert('截圖中，請再點一次！');
+            }
+        }
+
+        window.onload = calculate;
+    </script>
+</body>
+</html>

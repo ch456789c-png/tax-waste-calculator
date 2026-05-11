@@ -51,7 +51,7 @@
         #input, #unit {
             width: 100%;
             box-sizing: border-box;
-            font-size: 22px;           /* 縮小 */
+            font-size: 22px;
             padding: 14px 18px;
             border: 3px solid #00A650;
             border-radius: 16px;
@@ -61,16 +61,17 @@
             font-size: 20px;
         }
         .result {
-            font-size: 36px;           /* 縮小 */
+            font-size: 36px;
             font-weight: 700;
             color: #00A650;
             margin: 8px 0 6px 0;
-            word-break: break-all;     /* 長數字自動換行 */
+            word-break: break-all;
         }
         .comment {
-            font-size: 15.5px;         /* 縮小 */
+            font-size: 15.5px;
             line-height: 1.6;
             color: #2C3E35;
+            margin-top: 8px;
         }
         .clear-row {
             margin-top: 8px;
@@ -140,14 +141,15 @@
             <!-- 每人金額 -->
             <div class="card">
                 <div style="font-size:18px; margin-bottom:8px;">💰 能發給全民每人</div>
-                <div id="perPerson" class="result">0.00 元</div>
-                <div id="comment" class="comment"></div>
+                <div id="perPerson" class="result">0 元</div>
+                <div id="perComment" class="comment"></div>
             </div>
 
             <!-- 珍珠奶茶 -->
             <div class="card">
-                <div style="font-size:18px; margin-bottom:8px;">🧋 換算 珍珠奶茶你可以喝</div>
+                <div style="font-size:18px; margin-bottom:8px;">🧋 每人能喝幾杯珍珠奶茶</div>
                 <div id="pearlTea" class="result">0 杯</div>
+                <div id="pearlComment" class="comment"></div>
             </div>
 
             <button onclick="shareScreenshot()">📸 分享截圖給朋友</button>
@@ -157,39 +159,48 @@
 
     <script>
         function formatNumber(num) {
-            return num.toLocaleString('zh-TW');
-        }
-
-        function formatWithDecimal(num) {
-            return num.toLocaleString('zh-TW', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            return Math.round(num).toLocaleString('zh-TW');   // 四捨五入到整數
         }
 
         function getRawNumber(str) {
             return parseFloat(str.replace(/,/g, '')) || 0;
         }
 
-        function getWasteComment(perPerson) {
+        function getPerPersonComment(perPerson) {
             if (perPerson < 1) return "沒辦法做任何事情，跟你沒關係。政府這波操作，你連看都看不到。";
             if (perPerson < 100) return "你少了一杯手搖飲（80~100元）或是一份點心囉～ 政府幫你「健康管理」？";
             if (perPerson < 500) return "你好多天的餐費沒了… 這筆錢夠吃4~5天便當，現在只能繼續吃泡麵度日。";
-            if (perPerson < 1000) return "夠付全國一個月水電瓦斯的一小部分，或是半個月交通費… 這點錢連基本開銷都補不起，感謝政府「貼心」小確幸。";
+            if (perPerson < 1000) return "夠付全國一個月水電瓦斯的一小部分，或是半個月交通費… 這點錢連基本開銷都補不起。";
             if (perPerson < 5000) return "一個月吃飯錢的一小部分不見了… 近7成勞工月薪中位數才3.8萬多，這筆錢直接讓你吃土好幾週。";
-            if (perPerson < 10000) return "可以繳全國平均半個月到一個月房租（租金中位數約8500元）… 繼續當租奴，存錢夢想再等等。";
-            if (perPerson < 50000) return "超過很多人的月薪或好幾個月房租！這已經是全國單身一兩個月的基本生活費，直接腰斬你的財務。";
-            return "這已經是一整個月到好幾個月的平均薪水，或是一年基本生活費（全國每人約21.3萬元/年）… 可以考慮買小車頭期款、付房貸，或是認真考慮移民了。政府亂花錢的藝術，真的令人「佩服」到想哭！";
+            if (perPerson < 10000) return "可以繳全國平均半個月到一個月房租… 繼續當租奴，存錢夢想再等等。";
+            if (perPerson < 50000) return "超過很多人的月薪或好幾個月房租！這已經是全國單身一兩個月的基本生活費。";
+            return "這已經是一整個月到好幾個月的平均薪水… 可以考慮買小車頭期款、付房貸，或是認真考慮移民了。政府亂花錢的藝術，真的令人「佩服」到想哭！";
+        }
+
+        function getPearlComment(cups) {
+            if (cups < 1) return "連一杯珍奶都喝不到… 這就是政府分給你的「福利」嗎？";
+            if (cups < 5) return "只能勉強喝幾杯珍奶就沒了… 你的人生也太可憐了吧？";
+            if (cups < 20) return "夠喝幾天珍奶… 但政府這筆亂花的錢，轉眼就沒了。";
+            if (cups < 50) return "可以喝半個月左右的珍奶… 這就是你從政府那裡拿到的全部快樂。";
+            if (cups < 100) return "夠喝一個多月珍奶… 但房租還是付不起，繼續哭吧。";
+            if (cups < 300) return "可以喝好幾個月珍奶… 恭喜你，政府終於「大方」了一次。";
+            return "珍奶喝到想吐… 但這還是遠遠比不上政府這筆亂花的總金額。納稅人真的太好欺負了！";
         }
 
         function calculate() {
             let raw = getRawNumber(document.getElementById('input').value);
             let unit = parseFloat(document.getElementById('unit').value);
-            let amount = raw * unit;
+            let totalAmount = raw * unit;
 
-            let perPerson = amount / 23000000;
-            let pearlCups = amount / 70;
+            let perPerson = totalAmount / 23000000;
+            let pearlCups = perPerson / 70;
 
-            document.getElementById('perPerson').textContent = formatWithDecimal(perPerson) + " 元";
+            // 四捨五入到整數
+            document.getElementById('perPerson').textContent = formatNumber(perPerson) + " 元";
             document.getElementById('pearlTea').textContent = formatNumber(pearlCups) + " 杯";
-            document.getElementById('comment').textContent = getWasteComment(perPerson);
+            
+            document.getElementById('perComment').textContent = getPerPersonComment(perPerson);
+            document.getElementById('pearlComment').textContent = getPearlComment(pearlCups);
         }
 
         function clearInput() {
